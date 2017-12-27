@@ -13,4 +13,3 @@ class GameOfLifeTile(object):
 
     def kill(self):
         self.alive = False
-        
