@@ -15,12 +15,15 @@ class GameOfLife(object):
         'post-game': 4
     }
 
-    def __init__(self, width=8, height=6, live_cell_coords=None):
+    def __init__(self, rows=8, cols=6, live_cell_coords=None):
         """
         Initialize an instance of Game of Life.
+        Board defaults to taking up whole window.
         """
         self.screen = pygame.display.set_mode()
-        self.board = GameOfLifeBoard(width, height, live_cell_coords)
+        info = self.screen.Info()
+        self.board = GameOfLifeBoard(
+            info.current_w, info.current_h, rows, cols, live_cell_coords)
         self.clock = pygame.time.Clock()
         self.frames_per_second = 30
         self.deltat = self.clock.tick(self.frames_per_second)
