@@ -16,6 +16,16 @@ class GameOfLifeCell(object):
     def set_alive_status(self, is_alive):
         self.is_alive = is_alive
 
+    def draw_outline(self):
+        """
+        Draw outline with thickness 1 around cell's shape
+        :return:
+        """
+        shape = self.GUI_components.get('shape')
+        self.GUI_components['draw_func'](
+            self.GUI_components.get('outline_color'),
+            [shape.x-1, shape.y-1, shape.width+2, shape.height+2], 1)
+
     def draw_self(self):
         """
         """

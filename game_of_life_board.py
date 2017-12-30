@@ -21,17 +21,19 @@ class GameOfLifeBoard(object):
         cell_width = self.GUI_components.get('cell_width')
         cell_height = self.GUI_components.get('cell_height')
         surface = self.GUI_components.get('draw_surface')
-        shape_generator = (self.GUI_components.get('cell_shape_generator') or
-                           (lambda x,y,width,height: None))
+        self.shape_generator = (self.GUI_components.get('cell_shape_generator')
+                                or (lambda x,y,width,height: None))
         draw_func = (self.GUI_components.get('cell_draw_func') or
                      (lambda draw_surface,color,rect,w: None))
         self.board = [
             [GameOfLifeCell(
                 row, col, is_alive=(row,col) in live_cell_coords,
                 GUI_components={
-                    'shape': shape_generator(
-                        col*cell_width, row*cell_height, cell_width,
-                        cell_height),
+                    'shape': self.shape_generator(
+                        (col*cell_width)+1, (row*cell_height)+1,
+                        cell_width-2, cell_height-2),
+                    'outline_color': self.GUI_components.get(
+                        'cell_outline_color'),
                     'alive_color': self.GUI_components.get('alive_color'),
                     'dead_color': self.GUI_components.get('dead_color'),
                     'get_fill_param': lambda is_alive: 0 if is_alive else 0,
@@ -107,4 +109,5 @@ class GameOfLifeBoard(object):
     def display_self(self):
         for row in range(self.rows):
             for col in range(self.cols):
+                self.board[row][col].draw_outline()
                 self.board[row][col].draw_self()

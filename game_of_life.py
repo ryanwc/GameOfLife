@@ -42,6 +42,7 @@ class GameOfLife(object):
                 'cell_width': self.screen_info.current_w / cols,
                 'cell_height': self.screen_info.current_h / rows,
                 'cell_shape_generator': pygame.Rect,
+                'cell_outline_color': pygame.Color('black'),
                 'alive_color': pygame.Color('blue'),
                 'dead_color': pygame.Color('white'),
                 'cell_draw_func': pygame.draw.rect
