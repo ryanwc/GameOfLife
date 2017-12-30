@@ -1,6 +1,7 @@
 import pygame
 
 from game_of_life_board import GameOfLifeBoard
+import pdb
 
 
 class GameOfLife(object):
@@ -20,21 +21,26 @@ class GameOfLife(object):
         Initialize an instance of Game of Life.
         Board defaults to taking up whole window.
         """
-        self.screen = pygame.display.set_mode()
-        self.screen_info = self.screen.Info()
+        self.surface = pygame.display.set_mode()
+        self.screen_info = pygame.display.Info()
         self.clock = pygame.time.Clock()
         self.frames_per_second = 30
         self.deltat = self.clock.tick(self.frames_per_second)
+        self.animation_delay = 1000
         self.game_phase = GameOfLife.game_phases['initialization']
         self.menu = ['start simulation', 'create board', 'load board', 'quit']
+        rows = 6
+        cols = 8
         self.default_board = {
-            'rows': 8,
-            'cols': 6,
-            'live_cell_coords': None,
+            'rows': rows,
+            'cols': cols,
+            'live_cell_coords': (
+                (1, 1), (2, 2), (3, 3)
+            ),
             'GUI_components': {
-                'draw_surface': pygame.display.get_surface(),
-                'cell_width': self.screen_info.current_w,
-                'cell_height': self.screen_info.current_h,
+                'draw_surface': self.surface,
+                'cell_width': self.screen_info.current_w / cols,
+                'cell_height': self.screen_info.current_h / rows,
                 'cell_shape_generator': pygame.Rect,
                 'alive_color': pygame.Color('blue'),
                 'dead_color': pygame.Color('white'),
@@ -82,9 +88,19 @@ class GameOfLife(object):
             'board': GameOfLifeBoard(**self.default_board)
         }
 
-        while self.game['board'].put_board_in_next_state:
+        self.game['board'].display_self()
+        pygame.display.flip()
+        pdb.set_trace()
+        while True:
             continue
+        '''
+        pygame.time.delay(self.animation_delay)
+        while self.game['board'].put_board_in_next_state:
+            pygame.display.flip()
+            pygame.time.delay(self.animation_delay)
+            continue
+        '''
 
-if 'name' == '__main__':
+if __name__ == '__main__':
     game = GameOfLife()
     game.start()

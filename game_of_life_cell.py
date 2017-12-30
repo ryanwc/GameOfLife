@@ -24,3 +24,4 @@ class GameOfLifeCell(object):
         self.GUI_components['draw_func'](
             color, self.GUI_components.get('shape'),
             self.GUI_components['get_fill_param'](self.is_alive))
+        print('drew cell ({},{})'.format(self.row, self.col))

@@ -38,8 +38,8 @@ class GameOfLifeBoard(object):
                     'draw_func': partial(draw_func, surface)
                 }
             )
-                for row in range(rows)]
-            for col in range(cols)
+                for col in range(cols)]
+            for row in range(rows)
         ]
 
     def put_board_in_next_state(self):
@@ -72,7 +72,7 @@ class GameOfLifeBoard(object):
                 old_status = cell.is_alive
                 cell.is_alive = (row, col) in cells_to_set_alive
                 made_a_change = old_status == cell.is_alive
-                if made_a_change and cell.draw_func:
+                if made_a_change and cell.GUI_components.get('draw_func'):
                     cell.draw_self()
 
         return made_a_change
@@ -104,3 +104,8 @@ class GameOfLifeBoard(object):
                 if self.board[curr_row][curr_col].is_alive:
                     num_live_neighbors += 1
         return num_live_neighbors
+
+    def display_self(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                self.board[row][col].draw_self()
