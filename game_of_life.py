@@ -90,16 +90,17 @@ class GameOfLife(object):
 
         self.game['board'].display_self()
         pygame.display.flip()
-        pdb.set_trace()
-        while True:
-            continue
-        '''
+        #pdb.set_trace()
+        self.game_phase = GameOfLife.game_phases['simulation']
         pygame.time.delay(self.animation_delay)
-        while self.game['board'].put_board_in_next_state:
+        while self.game['board'].put_board_in_next_state():
             pygame.display.flip()
             pygame.time.delay(self.animation_delay)
             continue
-        '''
+
+        self.game_phase = GameOfLife.game_phases['post-game']
+        while self.game_phase == 4:
+            continue
 
 if __name__ == '__main__':
     game = GameOfLife()

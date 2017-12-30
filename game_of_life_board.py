@@ -1,7 +1,7 @@
 from functools import partial
 
 from game_of_life_cell import GameOfLifeCell
-
+import pdb
 
 class GameOfLifeBoard(object):
     """
@@ -34,7 +34,7 @@ class GameOfLifeBoard(object):
                         cell_height),
                     'alive_color': self.GUI_components.get('alive_color'),
                     'dead_color': self.GUI_components.get('dead_color'),
-                    'get_fill_param': lambda is_alive: 0 if is_alive else 1,
+                    'get_fill_param': lambda is_alive: 0 if is_alive else 0,
                     'draw_func': partial(draw_func, surface)
                 }
             )
@@ -56,26 +56,24 @@ class GameOfLifeBoard(object):
 
         Return True if made a change, False otherwise
         """
-        cells_to_set_alive = set([])
-        made_a_change = False
+        cells_to_flip = set([])
 
         # calculate next state
         for row in range(self.rows):
             for col in range(self.cols):
-                if self.get_next_cell_state(self.board[row][col]):
-                    cells_to_set_alive.add((row, col))
+                cell = self.board[row][col]
+                will_be_alive = self.get_next_cell_state(cell)
+                if ((will_be_alive and not cell.is_alive) or
+                        (not will_be_alive and cell.is_alive)):
+                    cells_to_flip.add(cell)
 
         # set next state
-        for row in range(self.rows):
-            for col in range(self.cols):
-                cell = self.board[row][col]
-                old_status = cell.is_alive
-                cell.is_alive = (row, col) in cells_to_set_alive
-                made_a_change = old_status == cell.is_alive
-                if made_a_change and cell.GUI_components.get('draw_func'):
-                    cell.draw_self()
+        #pdb.set_trace()
+        for cell in cells_to_flip:
+            cell.is_alive = not cell.is_alive
+            cell.draw_self()
 
-        return made_a_change
+        return len(cells_to_flip) > 0
 
     def get_next_cell_state(self, cell):
         """
@@ -96,9 +94,10 @@ class GameOfLifeBoard(object):
         """
         num_live_neighbors = 0
         for curr_row in range(cell.row-1, cell.row+2):
+            if curr_row < 0 or curr_row >= self.rows:
+                continue
             for curr_col in range(cell.col-1, cell.col+2):
                 if ((curr_row == cell.col and curr_col == cell.row) or
-                        (curr_row < 0 or curr_row >= self.rows) or
                         (curr_col < 0 or curr_col >= self.cols)):
                     continue
                 if self.board[curr_row][curr_col].is_alive:
