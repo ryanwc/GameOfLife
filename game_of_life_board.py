@@ -1,4 +1,5 @@
-import pygame
+from functools import partial
+
 from game_of_life_cell import GameOfLifeCell
 
 
@@ -7,15 +8,36 @@ class GameOfLifeBoard(object):
     Represent a board in the Game of Life.
     """
     def __init__(
-            self, cell_width, cell_height, rows, cols, live_cell_coords=None):
+            self, rows, cols, live_cell_coords=None, GUI_components=None):
+        """
+        Use dependency injection pattern to provide GUI components.
+        """
         # TODO: error handling for illegal sizes, live tiles
+        if GUI_components is None:
+            GUI_components = {}
+        self.GUI_components = GUI_components
         self.rows = rows
         self.cols = cols
+        cell_width = self.GUI_components.get('cell_width')
+        cell_height = self.GUI_components.get('cell_height')
+        surface = self.GUI_components.get('draw_surface')
+        shape_generator = (self.GUI_components.get('cell_shape_generator') or
+                           (lambda x,y,width,height: None))
+        draw_func = (self.GUI_components.get('cell_draw_func') or
+                     (lambda draw_surface,color,rect,w: None))
         self.board = [
             [GameOfLifeCell(
-                pygame.Rect(
-                    col*cell_width, row*cell_height, cell_width, cell_height),
-                row, col, is_alive=(row,col) in live_cell_coords)
+                row, col, is_alive=(row,col) in live_cell_coords,
+                GUI_components={
+                    'shape': shape_generator(
+                        col*cell_width, row*cell_height, cell_width,
+                        cell_height),
+                    'alive_color': self.GUI_components.get('alive_color'),
+                    'dead_color': self.GUI_components.get('dead_color'),
+                    'get_fill_param': lambda is_alive: 0 if is_alive else 1,
+                    'draw_func': partial(draw_func, surface)
+                }
+            )
                 for row in range(rows)]
             for col in range(cols)
         ]
@@ -46,14 +68,12 @@ class GameOfLifeBoard(object):
         # set next state
         for row in range(self.rows):
             for col in range(self.cols):
-                if (row, col) in cells_to_set_alive:
-                    if not self.board[row][col].is_alive:
-                        made_a_change = True
-                    self.board[row][col].is_alive = True
-                else:
-                    if self.board[row][col].is_alive:
-                        made_a_change = True
-                    self.board[row][col].is_alive = False
+                cell = self.board[row][col]
+                old_status = cell.is_alive
+                cell.is_alive = (row, col) in cells_to_set_alive
+                made_a_change = old_status == cell.is_alive
+                if made_a_change and cell.draw_func:
+                    cell.draw_self()
 
         return made_a_change
 
