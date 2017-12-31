@@ -9,12 +9,15 @@ class GameOfLife(object):
     Represent the Game of Life.
     """
     game_phases = {
+        'transition': -1,
         'initialization': 0,
         'menu': 1,
         'board creation': 2,
         'simulation': 3,
         'post-game': 4
     }
+    start_game_key_code = 13  # 'enter', '/r'
+    end_game_key_code = 113  # 'q'
 
     def __init__(self):
         """
@@ -65,43 +68,51 @@ class GameOfLife(object):
         """
         self.game_phase = GameOfLife.game_phases['menu']
         # TODO: wait for and process user menu selections
-        self.start_game()
+        self.start_board_creation()
 
     def start_board_creation(self):
         """
         Start the phase of the game where player creates the board.
         """
         self.game_phase = GameOfLife.game_phases['board creation']
-
-    def reset_menu_selections(self):
-        self.menu_selections = None
-
-    def start_game(self):
-        """
-        Start the Game of Life.
-        """
-        if not self.menu_selections:
-            return None
-
-        self.game_phase = GameOfLife.game_phases['simulation']
-        # TODO: begin an instance of the Game of Life based on user selections
         self.game = {
             'board': GameOfLifeBoard(**self.default_board)
         }
 
         self.game['board'].display_self()
         pygame.display.flip()
-        #pdb.set_trace()
+
+        while self.game_phase == GameOfLife.game_phases['board creation']:
+            self.clock.tick(self.frames_per_second)
+            for event in pygame.event.get():
+                if (hasattr(event, 'key') and
+                            event.key == GameOfLife.start_game_key_code):
+                    self.game_phase = GameOfLife.game_phases['transition']
+
+        self.start_game()
+
+    def start_game(self):
+        """
+        Start the Game of Life.
+        """
         self.game_phase = GameOfLife.game_phases['simulation']
+
         pygame.time.delay(self.animation_delay)
         while self.game['board'].put_board_in_next_state():
             pygame.display.flip()
             pygame.time.delay(self.animation_delay)
-            continue
 
         self.game_phase = GameOfLife.game_phases['post-game']
-        while self.game_phase == 4:
-            continue
+        pdb.set_trace()
+        while self.game_phase == GameOfLife.game_phases['post-game']:
+            self.clock.tick(self.frames_per_second)
+            for event in pygame.event.get():
+                if (hasattr(event, 'key') and
+                            event.key == GameOfLife.end_game_key_code):
+                    self.game_phase = GameOfLife.game_phases['transition']
+
+    def reset_menu_selections(self):
+        self.menu_selections = None
 
 if __name__ == '__main__':
     game = GameOfLife()
