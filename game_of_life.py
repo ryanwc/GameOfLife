@@ -8,7 +8,7 @@ class GameOfLife(object):
     """
     Represent the Game of Life.
     """
-    game_phases = {
+    GAME_PHASES = {
         'transition': -1,
         'initialization': 0,
         'menu': 1,
@@ -16,8 +16,8 @@ class GameOfLife(object):
         'simulation': 3,
         'post-game': 4
     }
-    start_game_key_code = 13  # 'enter', '/r'
-    end_game_key_code = 113  # 'q'
+    LEFT_MOUSE_BUTTON_CODE = 1
+    QUIT_KEY_CODES = [113]  # 'q'
 
     def __init__(self):
         """
@@ -29,8 +29,8 @@ class GameOfLife(object):
         self.clock = pygame.time.Clock()
         self.frames_per_second = 30
         self.deltat = self.clock.tick(self.frames_per_second)
-        self.animation_delay = 1000
-        self.game_phase = GameOfLife.game_phases['initialization']
+        self.animation_delay_length = 1000
+        self.game_phase = GameOfLife.GAME_PHASES['initialization']
         self.menu = ['start simulation', 'create board', 'load board', 'quit']
         rows = 6
         cols = 8
@@ -66,7 +66,7 @@ class GameOfLife(object):
         """
         Display the menu for Game of Life and wait for user selections.
         """
-        self.game_phase = GameOfLife.game_phases['menu']
+        self.game_phase = GameOfLife.GAME_PHASES['menu']
         # TODO: wait for and process user menu selections
         self.start_board_creation()
 
@@ -74,7 +74,7 @@ class GameOfLife(object):
         """
         Start the phase of the game where player creates the board.
         """
-        self.game_phase = GameOfLife.game_phases['board creation']
+        self.game_phase = GameOfLife.GAME_PHASES['board creation']
         self.game = {
             'board': GameOfLifeBoard(**self.default_board)
         }
@@ -82,12 +82,21 @@ class GameOfLife(object):
         self.game['board'].display_self()
         pygame.display.flip()
 
-        while self.game_phase == GameOfLife.game_phases['board creation']:
+        while self.game_phase == GameOfLife.GAME_PHASES['board creation']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
-                if (hasattr(event, 'key') and
-                            event.key == GameOfLife.start_game_key_code):
-                    self.game_phase = GameOfLife.game_phases['transition']
+                if hasattr(event, 'key') and event.key == pygame.K_RETURN:
+                    self.game_phase = GameOfLife.GAME_PHASES['transition']
+                    break
+                elif (event.type == pygame.MOUSEBUTTONDOWN and
+                        event.button == GameOfLife.LEFT_MOUSE_BUTTON_CODE):
+                    clicked_cell = self.get_cell_from_screen_coords(event.pos)
+                    if not clicked_cell:
+                        continue
+                    clicked_cell.is_alive = not clicked_cell.is_alive
+                    clicked_cell.draw_self()
+                    pygame.display.flip()
+                    break
 
         self.start_game()
 
@@ -95,24 +104,37 @@ class GameOfLife(object):
         """
         Start the Game of Life.
         """
-        self.game_phase = GameOfLife.game_phases['simulation']
+        self.game_phase = GameOfLife.GAME_PHASES['simulation']
 
-        pygame.time.delay(self.animation_delay)
+        pygame.time.delay(self.animation_delay_length)
         while self.game['board'].put_board_in_next_state():
             pygame.display.flip()
-            pygame.time.delay(self.animation_delay)
+            pygame.time.delay(self.animation_delay_length)
 
-        self.game_phase = GameOfLife.game_phases['post-game']
-        pdb.set_trace()
-        while self.game_phase == GameOfLife.game_phases['post-game']:
+        self.game_phase = GameOfLife.GAME_PHASES['post-game']
+        while self.game_phase == GameOfLife.GAME_PHASES['post-game']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
                 if (hasattr(event, 'key') and
-                            event.key == GameOfLife.end_game_key_code):
-                    self.game_phase = GameOfLife.game_phases['transition']
+                        event.key in GameOfLife.QUIT_KEY_CODES):
+                    self.game_phase = GameOfLife.GAME_PHASES['transition']
 
     def reset_menu_selections(self):
         self.menu_selections = None
+
+    def get_cell_from_screen_coords(self, screen_coords):
+        """
+        Return the GameOfLifeCell at the given (x, y) screen coords.
+        Return None if coords are out of board bounds.
+        """
+        row = int(
+            screen_coords[1]/self.game['board'].GUI_components['cell_height'])
+        col = int(
+            screen_coords[0]/self.game['board'].GUI_components['cell_width'])
+        if (row < 0 or row >= self.game['board'].rows or
+                col < 0 or col >= self.game['board'].cols):
+            return None
+        return self.game['board'].board[row][col]
 
 if __name__ == '__main__':
     game = GameOfLife()

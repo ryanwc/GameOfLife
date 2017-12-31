@@ -3,6 +3,7 @@ from functools import partial
 from game_of_life_cell import GameOfLifeCell
 import pdb
 
+
 class GameOfLifeBoard(object):
     """
     Represent a board in the Game of Life.
@@ -70,7 +71,6 @@ class GameOfLifeBoard(object):
                     cells_to_flip.add(cell)
 
         # set next state
-        #pdb.set_trace()
         for cell in cells_to_flip:
             cell.is_alive = not cell.is_alive
             cell.draw_self()
