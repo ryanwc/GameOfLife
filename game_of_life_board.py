@@ -7,11 +7,14 @@ import pdb
 class GameOfLifeBoard(object):
     """
     Represent a board in the Game of Life.
+    Holds GameOfLifeCells in a 2D list.
+    Can hold GUI components or not, depending on client game engine.
     """
     def __init__(
             self, rows, cols, live_cell_coords=None, GUI_components=None):
         """
         Use dependency injection pattern to provide GUI components.
+        Leaves room between cell shapes for outlines.
         """
         # TODO: error handling for illegal sizes, live tiles
         if GUI_components is None:
@@ -22,10 +25,19 @@ class GameOfLifeBoard(object):
         cell_width = self.GUI_components.get('cell_width')
         cell_height = self.GUI_components.get('cell_height')
         surface = self.GUI_components.get('draw_surface')
+
+        # shape generator should be a function that takes four args:
+        # top left x, top left y, width, and height, all in screen coords,
+        # and returns some obj
         self.shape_generator = (self.GUI_components.get('cell_shape_generator')
                                 or (lambda x,y,width,height: None))
+
+        # cell draw function should be a function that takes at least one
+        # positional arg: the surface to draw on
         draw_func = (self.GUI_components.get('cell_draw_func') or
-                     (lambda draw_surface,color,rect,w: None))
+                     (lambda draw_surface: None))
+
+        # 2D list comprehension with a GameOfLifeCell in each slot
         self.board = [
             [GameOfLifeCell(
                 row, col, is_alive=(row,col) in live_cell_coords,
@@ -107,6 +119,10 @@ class GameOfLifeBoard(object):
         return num_live_neighbors
 
     def display_self(self):
+        """
+        Displays the board in the GUI by drawing each cell and cell outline
+        with the provided draw functions.
+        """
         for row in range(self.rows):
             for col in range(self.cols):
                 self.board[row][col].draw_outline()

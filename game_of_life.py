@@ -1,4 +1,4 @@
-import pygame
+import pygame, sys
 
 from game_of_life_board import GameOfLifeBoard
 import pdb
@@ -32,27 +32,24 @@ class GameOfLife(object):
         self.animation_delay_length = 1000
         self.game_phase = GameOfLife.GAME_PHASES['initialization']
         self.menu = ['start simulation', 'create board', 'load board', 'quit']
-        rows = 6
-        cols = 8
-        self.default_board = {
-            'rows': rows,
-            'cols': cols,
-            'live_cell_coords': (
-                (1, 1), (2, 2), (3, 3)
-            ),
-            'GUI_components': {
-                'draw_surface': self.surface,
-                'cell_width': self.screen_info.current_w / cols,
-                'cell_height': self.screen_info.current_h / rows,
-                'cell_shape_generator': pygame.Rect,
-                'cell_outline_color': pygame.Color('black'),
-                'alive_color': pygame.Color('blue'),
-                'dead_color': pygame.Color('white'),
-                'cell_draw_func': pygame.draw.rect
-            }
-        }
+        rows, cols = self.get_board_size()
+
         self.menu_selections = {
-            'board': self.default_board
+            'board': {
+                'rows': rows,
+                'cols': cols,
+                'live_cell_coords': self.load_board(rows, cols),
+                'GUI_components': {
+                    'draw_surface': self.surface,
+                    'cell_width': self.screen_info.current_w / cols,
+                    'cell_height': self.screen_info.current_h / rows,
+                    'cell_shape_generator': pygame.Rect,
+                    'cell_outline_color': pygame.Color('black'),
+                    'alive_color': pygame.Color('blue'),
+                    'dead_color': pygame.Color('white'),
+                    'cell_draw_func': pygame.draw.rect
+                }
+            }
         }
         self.game = None
 
@@ -76,12 +73,14 @@ class GameOfLife(object):
         """
         self.game_phase = GameOfLife.GAME_PHASES['board creation']
         self.game = {
-            'board': GameOfLifeBoard(**self.default_board)
+            'board': GameOfLifeBoard(**self.menu_selections['board'])
         }
 
         self.game['board'].display_self()
         pygame.display.flip()
 
+        # player builds board by clicking on cells, then starts game
+        pygame.event.get()
         while self.game_phase == GameOfLife.GAME_PHASES['board creation']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
@@ -106,12 +105,15 @@ class GameOfLife(object):
         """
         self.game_phase = GameOfLife.GAME_PHASES['simulation']
 
+        # simulate
         pygame.time.delay(self.animation_delay_length)
         while self.game['board'].put_board_in_next_state():
             pygame.display.flip()
             pygame.time.delay(self.animation_delay_length)
 
+        # wait for player to quit
         self.game_phase = GameOfLife.GAME_PHASES['post-game']
+        pygame.event.get()
         while self.game_phase == GameOfLife.GAME_PHASES['post-game']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
@@ -135,6 +137,72 @@ class GameOfLife(object):
                 col < 0 or col >= self.game['board'].cols):
             return None
         return self.game['board'].board[row][col]
+
+    def get_board_size(self):
+        """
+        Get user input for num of rows and cols in game.
+        Return as a tuple.
+        """
+        while True:
+            try:
+                print('***************')
+                rows = int(input('Enter number of rows: '))
+                if 0 < rows <= 100:
+                    break
+            except:
+                print('enter a number between 1 and 100')
+
+        while True:
+            try:
+                print('***************')
+                cols = int(input('Enter number of columns: '))
+                if 0 < cols <= 100:
+                    break
+            except:
+                print('enter a number between 1 and 100')
+
+        return rows, cols
+
+    def load_board(self, rows, cols):
+        """
+        Load a board from user input.
+        Does not rigorously check for bad input.
+        """
+        live_cell_coords = set([])
+        print('***************')
+        print(
+            'Enter comma and space-separated list of live cell coordinates.')
+        print('Coordinates are zero-indexed from the top left, '
+              'so (0,0) is the top left cell.')
+        print(
+            'Example: If cells (0,3) and (3,2) are alive, enter \'0,3 3,2\'.')
+        print('Leave blank to provide no live cells.')
+
+        # could improve defensiveness/readability of this logic
+        while True:
+            had_error = False
+            live_cell_string = input()
+            if len(live_cell_string) < 1:
+                break
+            #pdb.set_trace()
+            live_cells = live_cell_string.split(' ')
+            for live_cell in live_cells:
+                coords = live_cell.split(',')
+                try:
+                    row = int(coords[0])
+                    col = int(coords[1])
+                    if (len(coords) != 2 or
+                            not 0 <= row < rows or not 0 <= col < cols):
+                        raise Exception
+                    live_cell_coords.add((row, col))
+                except:
+                    print('Error processing live cells; please try again')
+                    had_error = True
+                    break
+            if not had_error:
+                break
+
+        return live_cell_coords
 
 if __name__ == '__main__':
     game = GameOfLife()
