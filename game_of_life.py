@@ -16,8 +16,11 @@ class GameOfLife(object):
         'simulation': 3,
         'post-game': 4
     }
+    CANVAS_COLOR = pygame.Color('white')
+    COLORS = {'red', 'blue', 'green', 'brown', 'purple', 'orange', 'violet',
+              'black', 'yellow', 'grey', 'white'}
     LEFT_MOUSE_BUTTON_CODE = 1
-    QUIT_KEY_CODES = [113]  # 'q'
+    QUIT_KEY_CODES = {113}  # 'q'
 
     def __init__(self):
         """
@@ -29,10 +32,16 @@ class GameOfLife(object):
         self.clock = pygame.time.Clock()
         self.frames_per_second = 30
         self.deltat = self.clock.tick(self.frames_per_second)
-        self.animation_delay_length = 1000
+        self.animation_delay_length = self.get_animation_delay_length()
         self.game_phase = GameOfLife.GAME_PHASES['initialization']
         self.menu = ['start simulation', 'create board', 'load board', 'quit']
         rows, cols = self.get_board_size()
+
+        pygame.draw.rect(
+            self.surface,
+            GameOfLife.CANVAS_COLOR,
+            [0, 0, self.screen_info.current_w, self.screen_info.current_h], 0)
+        pygame.display.flip()
 
         self.menu_selections = {
             'board': {
@@ -43,11 +52,11 @@ class GameOfLife(object):
                     'draw_surface': self.surface,
                     'cell_width': self.screen_info.current_w / cols,
                     'cell_height': self.screen_info.current_h / rows,
-                    'cell_shape_generator': pygame.Rect,
-                    'cell_outline_color': pygame.Color('black'),
-                    'alive_color': pygame.Color('blue'),
-                    'dead_color': pygame.Color('white'),
-                    'cell_draw_func': pygame.draw.rect
+                    'cell_shape_generator': pygame.Rect,  # always click rects
+                    'cell_outline_color': self.get_item_color('cell outline'),
+                    'alive_color': self.get_item_color('alive cell'),
+                    'dead_color': self.get_item_color('dead cell'),
+                    'cell_draw_func': self.get_cell_draw_func()
                 }
             }
         }
@@ -184,7 +193,6 @@ class GameOfLife(object):
             live_cell_string = input()
             if len(live_cell_string) < 1:
                 break
-            #pdb.set_trace()
             live_cells = live_cell_string.split(' ')
             for live_cell in live_cells:
                 coords = live_cell.split(',')
@@ -203,6 +211,45 @@ class GameOfLife(object):
                 break
 
         return live_cell_coords
+
+    def get_item_color(self, item_to_color):
+        """
+        Get color for item from user input.
+        Is allowed to conflict with other item colors.
+        """
+        print('***************')
+        while True:
+            color = input('Enter {} color: '.format(item_to_color))
+            if color in GameOfLife.COLORS:
+                return pygame.Color(color)
+            print('Color not recognized')
+
+    def get_cell_draw_func(self):
+        """
+        Return's the cell draw func based on user input.
+        """
+        print('***************')
+        while True:
+            shape = input(
+                'Enter cell shape (either \'square\' or \'circle\'): ')
+            if shape == 'square':
+                return pygame.draw.rect
+            elif shape == 'circle':
+                return pygame.draw.ellipse
+
+    def get_animation_delay_length(self):
+        """
+        Get the animation delay length based on user input.
+        """
+        print('***************')
+        while True:
+            try:
+                speed = int(input('Enter animation speed (1 - 10, 10 being '
+                                 'slowest): '))
+                if 1 <= speed <= 10:
+                    return 100*speed
+            except:
+                pass
 
 if __name__ == '__main__':
     game = GameOfLife()

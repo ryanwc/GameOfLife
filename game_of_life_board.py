@@ -111,7 +111,7 @@ class GameOfLifeBoard(object):
             if curr_row < 0 or curr_row >= self.rows:
                 continue
             for curr_col in range(cell.col-1, cell.col+2):
-                if ((curr_row == cell.col and curr_col == cell.row) or
+                if ((curr_row == cell.row and curr_col == cell.col) or
                         (curr_col < 0 or curr_col >= self.cols)):
                     continue
                 if self.board[curr_row][curr_col].is_alive:
