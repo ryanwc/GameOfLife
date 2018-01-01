@@ -57,9 +57,9 @@ class GameOfLifeBoard(object):
             for row in range(rows)
         ]
 
-    def put_board_in_next_state(self):
+    def advance_board_one_generation(self):
         """
-        Set the board to the next state based on the rule of the Game of Life.
+        Set the board to the next state based on the rules of the Game of Life.
 
         Rules:
         1. A cell's 'neighbors' includes all cells adjacent in row, col, or
@@ -69,7 +69,7 @@ class GameOfLifeBoard(object):
         4. Any live cell with two or three live neighbors lives.
         5. Any dead cell with exactly three live neighbors becomes live.
 
-        Return True if made a change, False otherwise
+        Return True if made a change to the board, False otherwise.
         """
         cells_to_flip = set([])
 

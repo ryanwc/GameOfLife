@@ -1,4 +1,5 @@
-import pygame, sys
+#!/usr/bin/env python
+import pygame
 
 from game_of_life_board import GameOfLifeBoard
 import pdb
@@ -89,7 +90,7 @@ class GameOfLife(object):
         pygame.display.flip()
 
         # player builds board by clicking on cells, then starts game
-        pygame.event.get()
+        pygame.event.get()  # clear events
         while self.game_phase == GameOfLife.GAME_PHASES['board creation']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
@@ -116,13 +117,13 @@ class GameOfLife(object):
 
         # simulate
         pygame.time.delay(self.animation_delay_length)
-        while self.game['board'].put_board_in_next_state():
+        while self.game['board'].advance_board_one_generation():
             pygame.display.flip()
             pygame.time.delay(self.animation_delay_length)
 
         # wait for player to quit
         self.game_phase = GameOfLife.GAME_PHASES['post-game']
-        pygame.event.get()
+        pygame.event.get()  # clear events
         while self.game_phase == GameOfLife.GAME_PHASES['post-game']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
