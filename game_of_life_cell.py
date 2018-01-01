@@ -16,6 +16,14 @@ class GameOfLifeCell(object):
         self.row = row
         self.col = col
         self.is_alive = is_alive
+        self.generations_spent_alive = 0
+        self.generations_spent_dead = 0
+        self.longest_living_streak = 0
+        self.current_living_streak = 0
+        self.longest_dead_streak = 0
+        self.current_dead_streak = 0
+        self.births = 0
+        self.deaths = 0
         self.GUI_components = GUI_components
 
     def draw_outline(self):

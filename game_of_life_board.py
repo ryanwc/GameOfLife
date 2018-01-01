@@ -73,18 +73,34 @@ class GameOfLifeBoard(object):
         """
         cells_to_flip = set([])
 
-        # calculate next state
+        # calculate next gen and increment counters for current gen
         for row in range(self.rows):
             for col in range(self.cols):
                 cell = self.board[row][col]
+                if cell.is_alive:
+                    cell.generations_spent_alive += 1
+                    cell.current_living_streak += 1
+                    if cell.current_living_streak > cell.longest_living_streak:
+                        cell.longest_living_streak = cell.current_living_streak
+                else:
+                    cell.generations_spent_dead += 1
+                    cell.current_dead_streak += 1
+                    if cell.current_dead_streak > cell.longest_dead_streak:
+                        cell.longest_dead_streak = cell.current_dead_streak
                 will_be_alive = self.get_next_cell_state(cell)
                 if ((will_be_alive and not cell.is_alive) or
                         (not will_be_alive and cell.is_alive)):
+                    cell.current_living_streak = 0
+                    cell.current_dead_streak = 0
                     cells_to_flip.add(cell)
 
-        # set next state
+        # set next gen
         for cell in cells_to_flip:
             cell.is_alive = not cell.is_alive
+            if cell.is_alive:
+                cell.births += 1
+            else:
+                cell.deaths += 1
             cell.draw_self()
 
         return len(cells_to_flip) > 0
