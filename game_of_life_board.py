@@ -91,11 +91,11 @@ class GameOfLifeBoard(object):
                             cell.stats['current_living_streak']
                 else:
                     cell.stats['gens_dead'] += 1
-                    cell.stats['current_dead_streak'] += 1
-                    if (cell.stats['current_dead_streak'] >
-                            cell.stats['longest_dead_streak']):
-                        cell.stats['longest_dead_streak'] = \
-                            cell.stats['current_dead_streak']
+                    cell.stats['current_death_streak'] += 1
+                    if (cell.stats['current_death_streak'] >
+                            cell.stats['longest_death_streak']):
+                        cell.stats['longest_death_streak'] = \
+                            cell.stats['current_death_streak']
                 will_be_alive = self.get_next_cell_state(cell)
                 if ((will_be_alive and not cell.is_alive) or
                         (not will_be_alive and cell.is_alive)):
@@ -107,9 +107,9 @@ class GameOfLifeBoard(object):
         for cell in cells_to_flip:
             cell.is_alive = not cell.is_alive
             if cell.is_alive:
-                cell.births += 1
+                cell.stats['births'] += 1
             else:
-                cell.deaths += 1
+                cell.stats['deaths'] += 1
             cell.draw_self()
 
         return len(cells_to_flip) > 0
@@ -168,7 +168,8 @@ class GameOfLifeBoard(object):
             for col in range(self.cols):
                 cell_stats = self.board[row][col].stats
                 for stat in self.stats:
-                    stat.stats['list'].append(cell_stats[stat.category])
+                    stat.stats['list'].append(
+                        (cell_stats[stat.category], (row, col)))
 
         for stat in self.stats:
             stat.calculate_stats()
@@ -181,11 +182,13 @@ class GameOfLifeBoard(object):
 
         Category must be numerical (not, e.g., 'color' where 'color' can be
         'red', 'yellow', etc.).
+
+        Assumes list is a tuple of (value, (coords of cell with value))
         """
 
         def __init__(self, board, category, stats=None):
 
-            if dict is None:
+            if stats is None:
                 stats = {
                     'list': [],
                     'max': None,
@@ -211,6 +214,9 @@ class GameOfLifeBoard(object):
                 except:
                     continue
                 self_str += '\n<{}>: {}'.format(stat, val)
+                coords = self.stats.get(stat+'_coords')
+                if coords:
+                    self_str += ' at {}'.format(coords)
 
             self_str += '\n**********'
             return self_str
@@ -219,10 +225,14 @@ class GameOfLifeBoard(object):
             """
             Calculate and set the stats from the stats list.
             """
-            self.stats['list'].sort(reverse=True)
-            self.stats['max'] = self.stats['list'][0]
-            self.stats['min'] = self.stats['list'][-1]
-            self.stats['median'] = statistics.median(self.stats['list'])
-            self.stats['mean'] = sum(self.stats['list'])/len(self.stats['list'])
+            self.stats['list'].sort(key=lambda x: x[0], reverse=True)
+            stat_vals = [
+                val_coord_pair[0] for val_coord_pair in self.stats['list']]
+            self.stats['max'] = self.stats['list'][0][0]
+            self.stats['max_coords'] = self.stats['list'][0][1]
+            self.stats['min'] = self.stats['list'][-1][0]
+            self.stats['min_coords'] = self.stats['list'][-1][1]
+            self.stats['median'] = statistics.median(stat_vals)
+            self.stats['mean'] = sum(stat_vals) / len(self.stats['list'])
             self.stats['stdev'] = statistics.pstdev(
-                self.stats['list'], mu=self.stats['mean'])
+                stat_vals, mu=self.stats['mean'])
