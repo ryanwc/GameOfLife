@@ -124,12 +124,24 @@ class GameOfLife(object):
         # wait for player to quit
         self.game_phase = GameOfLife.GAME_PHASES['post-game']
         pygame.event.get()  # clear events
+        self.display_game_stats()
         while self.game_phase == GameOfLife.GAME_PHASES['post-game']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
                 if (hasattr(event, 'key') and
                         event.key in GameOfLife.QUIT_KEY_CODES):
                     self.game_phase = GameOfLife.GAME_PHASES['transition']
+
+    def display_game_stats(self):
+        """
+        Display stats for a Game of Life.
+
+        Sends stats to standard output. To display in GUI, modify this method.
+        """
+        board = self.game['board']
+        board.calculate_game_stats()
+        for stat in board.stats:
+            print(stat)
 
     def reset_menu_selections(self):
         self.menu_selections = None

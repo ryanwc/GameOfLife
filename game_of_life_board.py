@@ -1,3 +1,4 @@
+import statistics
 from functools import partial
 
 from game_of_life_cell import GameOfLifeCell
@@ -10,6 +11,9 @@ class GameOfLifeBoard(object):
     Holds GameOfLifeCells in a 2D list.
     Can hold GUI components or not, depending on client game engine.
     """
+    stat_categories = ['longest_living_streak', 'longest_death_streak',
+                       'births', 'deaths', 'gens_alive', 'gens_dead']
+
     def __init__(
             self, rows, cols, live_cell_coords=None, GUI_components=None):
         """
@@ -19,6 +23,7 @@ class GameOfLifeBoard(object):
         # TODO: error handling for illegal sizes, live tiles
         if GUI_components is None:
             GUI_components = {}
+        self.stats = None
         self.GUI_components = GUI_components
         self.rows = rows
         self.cols = cols
@@ -78,20 +83,24 @@ class GameOfLifeBoard(object):
             for col in range(self.cols):
                 cell = self.board[row][col]
                 if cell.is_alive:
-                    cell.generations_spent_alive += 1
-                    cell.current_living_streak += 1
-                    if cell.current_living_streak > cell.longest_living_streak:
-                        cell.longest_living_streak = cell.current_living_streak
+                    cell.stats['gens_alive'] += 1
+                    cell.stats['current_living_streak'] += 1
+                    if (cell.stats['current_living_streak'] >
+                            cell.stats['longest_living_streak']):
+                        cell.stats['longest_living_streak'] = \
+                            cell.stats['current_living_streak']
                 else:
-                    cell.generations_spent_dead += 1
-                    cell.current_dead_streak += 1
-                    if cell.current_dead_streak > cell.longest_dead_streak:
-                        cell.longest_dead_streak = cell.current_dead_streak
+                    cell.stats['gens_dead'] += 1
+                    cell.stats['current_dead_streak'] += 1
+                    if (cell.stats['current_dead_streak'] >
+                            cell.stats['longest_dead_streak']):
+                        cell.stats['longest_dead_streak'] = \
+                            cell.stats['current_dead_streak']
                 will_be_alive = self.get_next_cell_state(cell)
                 if ((will_be_alive and not cell.is_alive) or
                         (not will_be_alive and cell.is_alive)):
-                    cell.current_living_streak = 0
-                    cell.current_dead_streak = 0
+                    cell.stats['current_living_streak'] = 0
+                    cell.stats['current_dead_streak'] = 0
                     cells_to_flip.add(cell)
 
         # set next gen
@@ -143,3 +152,77 @@ class GameOfLifeBoard(object):
             for col in range(self.cols):
                 self.board[row][col].draw_outline()
                 self.board[row][col].draw_self()
+
+    def calculate_game_stats(self):
+        """
+        Calculate the stats for the game, such as cell with longest living
+        streak, cell with most deaths, percentiles for each cell, etc.
+        Stores results in the board's 'stats' variable.
+        """
+        self.stats = {
+            self.GameOfLifeStat(self, category)
+            for category in GameOfLifeBoard.stat_categories
+        }
+
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell_stats = self.board[row][col].stats
+                for stat in self.stats:
+                    stat.stats['list'].append(cell_stats[stat.category])
+
+        for stat in self.stats:
+            stat.calculate_stats()
+
+    class GameOfLifeStat(object):
+        """
+        Hold a GameOfLife stats for a particular board and stat category.
+        A category is a name like 'births' or 'longest_living_streak',
+        and the actual stats would be, for example, 'max' or 'median'.
+
+        Category must be numerical (not, e.g., 'color' where 'color' can be
+        'red', 'yellow', etc.).
+        """
+
+        def __init__(self, board, category, stats=None):
+
+            if dict is None:
+                stats = {
+                    'list': [],
+                    'max': None,
+                    'min': None,
+                    'median': None,
+                    'mean': None,
+                    'stdev': None
+                }
+
+            self.board = board
+            self.category = category
+            self.stats = stats
+
+        def __str__(self):
+            """
+            Only prints stats whose vals can be converted to an int (but
+            does not necessarily print this conversion).
+            """
+            self_str = '**********\nStat category: {}'.format(self.category)
+            for stat, val in self.stats.items():
+                try:
+                    int(val)
+                except:
+                    continue
+                self_str += '\n<{}>: {}'.format(stat, val)
+
+            self_str += '\n**********'
+            return self_str
+
+        def calculate_stats(self):
+            """
+            Calculate and set the stats from the stats list.
+            """
+            self.stats['list'].sort(reverse=True)
+            self.stats['max'] = self.stats['list'][0]
+            self.stats['min'] = self.stats['list'][-1]
+            self.stats['median'] = statistics.median(self.stats['list'])
+            self.stats['mean'] = sum(self.stats['list'])/len(self.stats['list'])
+            self.stats['stdev'] = statistics.pstdev(
+                self.stats['list'], mu=self.stats['mean'])
