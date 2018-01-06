@@ -1,6 +1,8 @@
 import statistics
 from functools import partial
 
+from scipy.stats import norm
+
 from game_of_life_cell import GameOfLifeCell
 import pdb
 
@@ -11,8 +13,14 @@ class GameOfLifeBoard(object):
     Holds GameOfLifeCells in a 2D list.
     Can hold GUI components or not, depending on client game engine.
     """
-    stat_categories = ['longest_living_streak', 'longest_death_streak',
-                       'births', 'deaths', 'gens_alive', 'gens_dead']
+    STAT_CATEGORIES = {
+        0: 'longest_living_streak',
+        1: 'longest_death_streak',
+        2: 'births',
+        3: 'deaths',
+        4: 'gens_alive',
+        5: 'gens_dead'
+    }
 
     def __init__(
             self, rows, cols, live_cell_coords=None, GUI_components=None):
@@ -143,15 +151,41 @@ class GameOfLifeBoard(object):
                     num_live_neighbors += 1
         return num_live_neighbors
 
-    def display_self(self):
+    def display_self(self, stat=''):
         """
         Displays the board in the GUI by drawing each cell and cell outline
         with the provided draw functions.
         """
         for row in range(self.rows):
             for col in range(self.cols):
-                self.board[row][col].draw_outline()
-                self.board[row][col].draw_self()
+                cell = self.board[row][col]
+                cell.draw_outline()
+                stat_draw_modifiers = {}
+                if stat:
+                    stat_draw_modifiers['alpha'] = self.get_stat_alpha(
+                        cell, stat)
+                cell.draw_self(stat_modifiers=stat_draw_modifiers)
+
+    def get_stat_alpha(self, cell, category):
+        """
+        Get the alpha value for a cell's color drawn with respect to given stat
+        category
+        """
+        if cell.stats[category] == 0:
+            return 0
+        if self.stats[category].stats['stdev'] == 0:
+            return int(0.5*255)
+
+        z_score = ((cell.stats[category] - self.stats[category].stats['mean']) /
+                   self.stats[category].stats['stdev'])
+        percent_below = norm.cdf(z_score)
+        if percent_below > 0.95:
+            alpha = 255
+        elif percent_below < 0.05:
+            alpha = 0
+        else:
+            alpha = int(percent_below*255)
+        return alpha
 
     def calculate_game_stats(self):
         """
@@ -160,18 +194,18 @@ class GameOfLifeBoard(object):
         Stores results in the board's 'stats' variable.
         """
         self.stats = {
-            self.GameOfLifeStat(self, category)
-            for category in GameOfLifeBoard.stat_categories
+            category: self.GameOfLifeStat(self, category)
+            for category in GameOfLifeBoard.STAT_CATEGORIES.values()
         }
 
         for row in range(self.rows):
             for col in range(self.cols):
                 cell_stats = self.board[row][col].stats
-                for stat in self.stats:
+                for stat in self.stats.values():
                     stat.stats['list'].append(
                         (cell_stats[stat.category], (row, col)))
 
-        for stat in self.stats:
+        for stat in self.stats.values():
             stat.calculate_stats()
 
     class GameOfLifeStat(object):

@@ -40,19 +40,34 @@ class GameOfLifeCell(object):
             self.GUI_components['outline_color'],
             [shape.x-1, shape.y-1, shape.width+2, shape.height+2], 1)
 
-    def draw_self(self):
+    def draw_self(self, stat_modifiers=None):
         """
         Draw the cell to the GUI.
         Depends on client providing a GUI draw function which takes a color
         (alive or dead), shape, and outline thickness/shape fill flag
         as parameters.
+
+        :param stat_modifiers: dict of instructions for drawing the cell
+        as a stat.
         """
         if any(not self.GUI_components.get(GUI_key) for GUI_key in
                ['shape', 'draw_func', 'alive_color',
                 'dead_color', 'get_fill_param']):
             return None
-        color = (self.GUI_components.get('alive_color') if self.is_alive else
-                 self.GUI_components.get('dead_color'))
+
+        old_alpha = None
+        if stat_modifiers:
+            color = self.GUI_components.get('alive_color')
+            old_alpha = color.a
+            color.a = stat_modifiers.get('alpha')
+        else:
+            color = (self.GUI_components.get('alive_color') if self.is_alive
+                     else self.GUI_components.get('dead_color'))
+
         self.GUI_components['draw_func'](
             color, self.GUI_components.get('shape'),
             self.GUI_components['get_fill_param'](self.is_alive))
+
+        self.GUI_components['current_alpha'] = color.a
+        if old_alpha:
+            color.a = old_alpha

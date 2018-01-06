@@ -21,6 +21,8 @@ class GameOfLife(object):
     COLORS = {'red', 'blue', 'green', 'brown', 'purple', 'orange', 'violet',
               'black', 'yellow', 'grey', 'white'}
     LEFT_MOUSE_BUTTON_CODE = 1
+    KEY_0_CODE = 48  # '0'
+    VIEW_BOARD_KEY_CODE = 118  # 'v'
     QUIT_KEY_CODES = {113}  # 'q'
 
     def __init__(self):
@@ -38,10 +40,7 @@ class GameOfLife(object):
         self.menu = ['start simulation', 'create board', 'load board', 'quit']
         rows, cols = self.get_board_size()
 
-        pygame.draw.rect(
-            self.surface,
-            GameOfLife.CANVAS_COLOR,
-            [0, 0, self.screen_info.current_w, self.screen_info.current_h], 0)
+        self.draw_blank_canvas()
         pygame.display.flip()
 
         self.menu_selections = {
@@ -125,12 +124,40 @@ class GameOfLife(object):
         self.game_phase = GameOfLife.GAME_PHASES['post-game']
         pygame.event.get()  # clear events
         self.display_game_stats()
+        self.display_end_game_menu()
         while self.game_phase == GameOfLife.GAME_PHASES['post-game']:
             self.clock.tick(self.frames_per_second)
             for event in pygame.event.get():
-                if (hasattr(event, 'key') and
-                        event.key in GameOfLife.QUIT_KEY_CODES):
-                    self.game_phase = GameOfLife.GAME_PHASES['transition']
+                stat_codes = GameOfLifeBoard.STAT_CATEGORIES
+                if hasattr(event, 'key'):
+                    if event.key in GameOfLife.QUIT_KEY_CODES:
+                        self.game_phase = GameOfLife.GAME_PHASES['transition']
+                        break
+                    elif event.key == GameOfLife.VIEW_BOARD_KEY_CODE:
+                        self.game['board'].display_self()
+                        pygame.display.flip()
+                    elif (0 <= event.key - GameOfLife.KEY_0_CODE <
+                              len(GameOfLifeBoard.STAT_CATEGORIES)):
+                        # pygame does not draw with alpha. must blit.
+                        color = self.game['board'].GUI_components['alive_color']
+                        board = self.game['board'].board
+                        category = GameOfLifeBoard.STAT_CATEGORIES[event.key-GameOfLife.KEY_0_CODE]
+                        self.draw_blank_canvas()
+                        for row in range(len(board)):
+                            for cell in board[row]:
+                                cell.draw_outline()
+                                shape = cell.GUI_components['shape']
+                                cell_surface = pygame.Surface(
+                                    (shape.width, shape.height),
+                                    pygame.SRCALPHA)
+                                color.a = self.game['board'].get_stat_alpha(
+                                    cell, category)
+                                cell_surface.fill(color)
+                                self.surface.blit(
+                                    cell_surface, (shape.x, shape.y))
+                        color.a = 255  # reset base alpha
+                        pygame.display.flip()
+                        break
 
     def display_game_stats(self):
         """
@@ -140,8 +167,18 @@ class GameOfLife(object):
         """
         board = self.game['board']
         board.calculate_game_stats()
-        for stat in board.stats:
+        for stat in board.stats.values():
             print(stat)
+
+    def display_end_game_menu(self):
+        """
+        Show the menu for the end of the game.
+        """
+        menu = 'Game Over!\nPress a key from this menu:'
+        for stat_code, category_name in GameOfLifeBoard.STAT_CATEGORIES.items():
+            menu += '\n<{}>: view \'{}\' stats'.format(stat_code, category_name)
+        menu += '\n<v>: view end board configuration\n<q>: quit'
+        print(menu)
 
     def reset_menu_selections(self):
         self.menu_selections = None
@@ -263,6 +300,15 @@ class GameOfLife(object):
                     return 100*speed
             except:
                 pass
+
+    def draw_blank_canvas(self):
+        """
+        Fill screen with canvas color.
+        """
+        pygame.draw.rect(
+            self.surface,
+            GameOfLife.CANVAS_COLOR,
+            [0, 0, self.screen_info.current_w, self.screen_info.current_h], 0)
 
 if __name__ == '__main__':
     game = GameOfLife()
